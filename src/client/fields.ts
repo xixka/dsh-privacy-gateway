@@ -6,9 +6,9 @@
  * and that each field is volatile there: the settings service writes only
  * volatile fields, and the plugin applies them without remounting.
  *
- * The rest (intercept, actions, cookieNames, cookieKeep, protectEnvBlock,
- * protectTools, excludeHosts, maxValues, keepMegabytes, keepRecords) stay in
- * cordis.patch.yml: they are for the person wiring the gateway, not for everyday use.
+ * The rest (actions, cookieNames, cookieKeep, protectEnvBlock, protectTools,
+ * excludeHosts, maxValues, keepMegabytes, keepRecords) stay in cordis.patch.yml:
+ * they are for the person wiring the gateway, not for everyday use.
  */
 
 export type GroupId = 'mask' | 'lists' | 'record' | 'view'
@@ -61,7 +61,7 @@ export const FIELDS: readonly FieldSpec[] = [
   { key: 'record', group: 'record', kind: 'switch', default: true, half: true, risk: 'delete' },
   { key: 'keepDays', group: 'record', kind: 'count', min: 1, default: 30, half: true, risk: 'delete' },
   { key: 'recordContext', group: 'record', kind: 'switch', default: true },
-  // off clears the copies kept so far; stream keeps the structured request before adapter serialization
+  // off clears the copies kept so far
   { key: 'vendorView', group: 'record', kind: 'switch', default: false, risk: 'delete' },
   { key: 'showPanel', group: 'view', kind: 'switch', default: false },
   { key: 'excludeProviders', group: 'view', kind: 'providers', default: [], risk: 'send' },
@@ -150,8 +150,6 @@ export function groupSummary(g: GroupId, value: Record<string, unknown>): Summar
       const guard = spec('toolGuard', 'choice')
       parts.push({ key: `cfg.s.toolGuard.${choiceValue(value.toolGuard, guard.choices, guard.default)}` })
       if (on('restoreLog')) parts.push({ key: 'cfg.s.restoreLog' })
-      // intercept is an internal cordis.patch.yml switch, but its non-default state stays visible here.
-      if (choiceValue(value.intercept, ['dispatcher', 'stream'], 'dispatcher') === 'stream') parts.push({ key: 'cfg.s.intercept.stream' })
       return parts
     }
     case 'lists':

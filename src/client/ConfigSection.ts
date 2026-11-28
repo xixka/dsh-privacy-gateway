@@ -143,21 +143,18 @@ export function ConfigSection(props: { ctx: ClientCtx; t: T; form?: RowForm }): 
   const [unavailable, setUnavailable] = useState(false)
   const [tries, setTries] = useState(0)
   const [open, setOpen] = useState<GroupId[]>(readOpen)
-  const state = form?.state
-  const ready = state?.status === 'ready'
-  const writable = state?.writable !== false
-  const saved = state?.value ?? {}
-  // what each field shows and the next change starts from: the saved value, or the one still on its way
-  const value = (k: FieldSpec['key']): unknown => queue.latest(k, saved[k])
-  // intercept is an internal cordis.patch.yml switch, not a control on this page. Its volatile
-  // form value still lets the folded summary identify the non-default structured mode.
-  const mode = choiceValue(saved.intercept, ['dispatcher', 'stream'], 'dispatcher') as 'stream' | 'dispatcher'
   const toggle = (g: GroupId): void =>
     setOpen((was) => {
       const next = was.includes(g) ? was.filter((x) => x !== g) : GROUPS.filter((x) => x === g || was.includes(x))
       writeOpen(next)
       return next
     })
+  const state = form?.state
+  const ready = state?.status === 'ready'
+  const writable = state?.writable !== false
+  const saved = state?.value ?? {}
+  // what each field shows and the next change starts from: the saved value, or the one still on its way
+  const value = (k: FieldSpec['key']): unknown => queue.latest(k, saved[k])
   useEffect(() => {
     const abort = new AbortController()
     void fetchProviders(ctx, abort.signal).then((r) => {
@@ -252,7 +249,7 @@ export function ConfigSection(props: { ctx: ClientCtx; t: T; form?: RowForm }): 
       )
     return undefined
   }
-  const shown = { ...Object.fromEntries(FIELDS.map((f) => [f.key, value(f.key)])), intercept: mode }
+  const shown = Object.fromEntries(FIELDS.map((f) => [f.key, value(f.key)]))
   const group = (g: GroupId): ReactNode => {
     const fields = FIELDS.filter((f) => f.group === g)
     const name = t(key(`cfg.g.${g}`))

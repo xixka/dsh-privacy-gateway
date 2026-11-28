@@ -141,27 +141,21 @@ test('vendorView turned off serves no body and drops the ones kept, before any r
   })
 })
 
-test('Remote reports intercept live and vendorView remains available in both modes', async () => {
+test('stream mode serves no vendorView body and clears the copies kept', async () => {
   const config: PrivacyGatewayConfig = { vendorView: true }
   await withPlugin(config, { title: 't', workspace: 'w' }, async (h) => {
     await h.send(`key ${SENTINEL}`)
-    const dispatcher = h.source.overview(50)
     assert.ok(getGlobalDispatcher() instanceof MaskingDispatcher)
-    assert.equal(dispatcher.intercept, 'dispatcher')
+    const dispatcher = h.source.overview(50)
     assert.equal(dispatcher.vendorView, true)
     const key = dispatcher.views?.[0]
     assert.ok(key !== undefined)
     config.intercept = 'stream'
     const stream = h.source.overview(50)
-    assert.equal(getGlobalDispatcher() instanceof MaskingDispatcher, false, 'reading the live mode also disposes the old half')
-    assert.equal(stream.intercept, 'stream')
-    assert.equal(stream.vendorView, true)
-    assert.deepEqual(stream.views, [key])
+    assert.equal(stream.vendorView, false)
+    assert.deepEqual(stream.views, [])
     assert.equal(stream.restoreLog, false)
-    assert.ok(h.source.vendorView?.(key)?.body.includes('⟦DSH_REDACTED:API_KEY_'))
-    config.intercept = 'dispatcher'
-    assert.equal(h.source.overview(50).intercept, 'dispatcher')
-    assert.ok(getGlobalDispatcher() instanceof MaskingDispatcher, 'reading the mode back reinstalls the dispatcher before the next request')
+    assert.equal(h.source.vendorView?.(key), null)
   })
 })
 

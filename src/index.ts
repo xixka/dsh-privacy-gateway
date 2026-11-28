@@ -254,7 +254,7 @@ export function apply(ctx: PluginContext, config: PrivacyGatewayConfig = {}): vo
       // The half is experimental (docs/adr/0040): say so once, in the log the maintainer reads.
       if (!streamWarned) {
         streamWarned = true
-        ctx.logger.warn('dsh-privacy-gateway: intercept=stream is experimental: it covers only calls that go through llm/stream, redispatches the masked request, and its vendorView is the structured request before adapter serialization; set intercept back to dispatcher to return to the default')
+        ctx.logger.warn('dsh-privacy-gateway: intercept=stream is experimental: it covers only calls that go through llm/stream, redispatches the masked request, and leaves maskKeys and vendorView off; set intercept back to dispatcher to return to the default')
       }
       ctx.logger.info('dsh-privacy-gateway: masking on llm/stream')
       return
@@ -342,8 +342,6 @@ export function apply(ctx: PluginContext, config: PrivacyGatewayConfig = {}): vo
       overview: (limit, session) => {
         // first: a change the configuration page made is applied before anything is read
         const c = current()
-        // an explicit write boundary: the read may follow a mode edit made on another page
-        ensureMode(c.intercept)
         const recent = records.recent(limit, session)
         // Warned or blocked values may never enter the table; their request's audit snapshot is authoritative.
         const shownSession = session ? sessionLabel(session, recent) : undefined
@@ -356,10 +354,9 @@ export function apply(ctx: PluginContext, config: PrivacyGatewayConfig = {}): vo
           ...(shownSession !== undefined ? { session: shownSession } : {}),
           stats: records.stats(session),
           recent,
-          vendorView: c.vendorView,
+          vendorView: c.vendorView && c.intercept === 'dispatcher',
           restoreLog: c.restoreLog,
-          views: c.vendorView ? views.keys() : [],
-          intercept: c.intercept,
+          views: c.vendorView && c.intercept === 'dispatcher' ? views.keys() : [],
           // read now: the detail page's switch changes it without remounting the plugin
           showPanel: liveBool(config.showPanel, c.showPanel),
           excludeProviders: excludedProviders(),
@@ -417,9 +414,7 @@ export function apply(ctx: PluginContext, config: PrivacyGatewayConfig = {}): vo
         // read now: vendorView turned off on the configuration page serves no body from then on,
         // and drops the ones kept, without waiting for the next request to apply the change
         const c = current()
-        // an explicit write boundary: a mode edit made on another page is applied before the answer
-        ensureMode(c.intercept)
-        if (!c.vendorView) {
+        if (!c.vendorView || c.intercept !== 'dispatcher') {
           views.clear()
           return null
         }

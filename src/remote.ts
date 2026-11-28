@@ -45,8 +45,6 @@ export interface Overview {
   sessionMasking?: boolean
   /** The host half's own version; absent on a host too old to say. */
   version?: string
-  /** Where masking runs now (docs/adr/0040); absent on a host too old to say, and the client reads that as dispatcher. */
-  intercept?: 'stream' | 'dispatcher'
   /** What this host can answer (docs/adr/0039); absent on a host without the history query. */
   capabilities?: {
     historyQuery: boolean
@@ -83,7 +81,7 @@ export interface VendorViewRequest {
   key: number
 }
 
-/** The dispatcher wire body or stream structured request before adapter serialization; warned values stay projected (docs/adr/0016). */
+/** A recorded request's body as the vendor got it, a warned value as its placeholder (docs/adr/0016). */
 export interface VendorView {
   key: number
   body: string
